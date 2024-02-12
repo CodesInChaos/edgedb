@@ -15,7 +15,7 @@ jobs:
     outputs:
       branch: ${{ steps.whichver.outputs.branch }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Determine package version
       shell: bash
@@ -476,7 +476,7 @@ jobs:
     needs: prep
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-pkg
         ref: master
@@ -491,7 +491,7 @@ jobs:
         default: true
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       if: false
       with:
         python-version: "3.x"
@@ -519,7 +519,7 @@ jobs:
     needs: prep
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-pkg
         ref: master
@@ -534,7 +534,7 @@ jobs:
         default: true
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       if: false
       with:
         python-version: "3.x"
@@ -1003,7 +1003,7 @@ jobs:
     runs-on: ['self-hosted', 'macOS', 'X64']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-pkg
         ref: master
@@ -1027,7 +1027,7 @@ jobs:
     runs-on: ['self-hosted', 'macOS', 'ARM64']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-pkg
         ref: master
@@ -2148,7 +2148,7 @@ jobs:
         name: builds-macos-x86_64
         path: artifacts/macos-x86_64
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-pkg
         ref: master
@@ -2178,7 +2178,7 @@ jobs:
         name: builds-macos-aarch64
         path: artifacts/macos-aarch64
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-pkg
         ref: master
@@ -2205,7 +2205,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: edgedb/edgedb-docker
         ref: master
