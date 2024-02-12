@@ -356,6 +356,10 @@ def render_signup_page(
         </div>
         """
 
+    email_factor_script = ""
+    if webauthn_provider:
+        email_factor_script += """
+        <script type="module" src="_static/webauthn.js"></script>"""
     return _render_base_page(
         title=f'Sign up{f" to {app_name}" if app_name else ""}',
         logo_url=logo_url,
@@ -390,11 +394,7 @@ def render_signup_page(
     }
     {email_factor_form if has_email_factor else ''}
     </form>
-    {
-      """
-      <script type="module" src="_static/webauthn-register.js"></script>"""
-      if webauthn_provider is not None else ''
-    }
+    {email_factor_script}
     ''',
     )
 
