@@ -143,6 +143,8 @@ class Router:
                     return await self.handle_ui_resend_verification(
                         *handler_args
                     )
+                case ("ui", "magic-link-sent"):
+                    return await self.handle_ui_magic_link_sent(*handler_args)
                 case ('ui', '_static', filename):
                     filepath = os.path.join(
                         os.path.dirname(__file__), '_static', filename
@@ -1149,7 +1151,7 @@ class Router:
 
             response.status = http.HTTPStatus.OK
             response.content_type = b'text/html'
-            response.body = ui.render_login_page(
+            response.body = ui.render_signin_page(
                 base_path=self.base_path,
                 providers=providers,
                 redirect_to=ui_config.redirect_to,
@@ -1476,6 +1478,21 @@ class Router:
             logo_url=app_details_config.logo_url,
             dark_logo_url=app_details_config.dark_logo_url,
             brand_color=app_details_config.brand_color,
+        )
+
+    async def handle_ui_magic_link_sent(self, request: Any, response: Any):
+        """
+        Success page for when a magic link is sent
+        """
+
+        app_details = self._get_app_details_config()
+        response.status = http.HTTPStatus.OK
+        response.content_type = b"text/html"
+        response.body = ui.render_magic_link_sent_page(
+            app_name=app_details.app_name,
+            logo_url=app_details.logo_url,
+            dark_logo_url=app_details.dark_logo_url,
+            brand_color=app_details.brand_color,
         )
 
     def _get_callback_url(self) -> str:

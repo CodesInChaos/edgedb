@@ -67,18 +67,17 @@ class Client(local.Client):
             result = await execute.parse_execute_json(
                 self.db,
                 """
-                WITH
-                    email := <str>$email,
-                    identity := (INSERT ext::auth::LocalIdentity {
-                        issuer := "local",
-                        subject := "",
-                    }),
-                    email_factor := (INSERT ext::auth::MagicLinkFactor {
-                        email := email,
-                        identity := identity,
-                    })
-                SELECT identity { * };
-                """,
+with
+    email := <str>$email,
+    identity := (insert ext::auth::LocalIdentity {
+        issuer := "local",
+        subject := "",
+    }),
+    email_factor := (insert ext::auth::MagicLinkFactor {
+        email := email,
+        identity := identity,
+    })
+select identity { * };""",
                 variables={
                     "email": email,
                 },

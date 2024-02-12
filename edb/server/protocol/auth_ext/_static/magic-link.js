@@ -1,25 +1,22 @@
-const MAGIC_LINK_SEND_URL = new URL(
-  "../send-magic-link",
-  window.location
-);
-const MAGIC_LINK_SENT_URL = new URL(
-  "./magic-link-sent",
-  window.location
-);
-document.addEventListener("DOMContentLoaded", function () {
-  const registerForm = document.getElementById("email-factor");
+const MAGIC_LINK_SEND_URL = new URL("../send-magic-link", window.location.href);
+const MAGIC_LINK_SENT_URL = new URL("./magic-link-sent", window.location.href);
 
-  if (registerForm === null) {
+document.addEventListener("DOMContentLoaded", function () {
+  const emailFactorForm = document.getElementById("email-factor");
+
+  if (emailFactorForm === null) {
     return;
   }
 
-  registerForm.addEventListener("submit", async (event) => {
-    if (event.submitter?.id !== "magic-link-signup") {
+  emailFactorForm.addEventListener("submit", async (event) => {
+    if (event.submitter?.id !== "magic-link") {
       return;
     }
     event.preventDefault();
 
-    const formData = new FormData(/** @type {HTMLFormElement} */ registerForm);
+    const formData = new FormData(
+      /** @type {HTMLFormElement} */ emailFactorForm
+    );
     const email = formData.get("email");
     const provider = "builtin::local_magic_link";
     const callbackUrl = formData.get("redirect_to");
@@ -35,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     try {
-      await register({
+      await sendMagicLink({
         email,
         provider,
         callbackUrl,
@@ -51,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-async function register({ email, provider, callbackUrl, challenge }) {
+async function sendMagicLink({ email, provider, callbackUrl, challenge }) {
   const response = await fetch(MAGIC_LINK_SEND_URL, {
     method: "POST",
     headers: {
@@ -66,12 +63,9 @@ async function register({ email, provider, callbackUrl, challenge }) {
   });
 
   if (!response.ok) {
-    console.error(
-      "Failed to register magic link: ",
-      response.statusText
-    );
+    console.error("Failed to send magic link: ", response.statusText);
     console.error(await response.text());
-    throw new Error("Failed to register magic link");
+    throw new Error("Failed to send magic link");
   }
 
   try {

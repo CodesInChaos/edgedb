@@ -36,7 +36,7 @@ known_oauth_provider_names = [
 ]
 
 
-def render_login_page(
+def render_signin_page(
     *,
     base_path: str,
     providers: frozenset,
@@ -147,7 +147,7 @@ def render_login_page(
             email_factor_form += ""
         case (None, None, _):
             email_factor_form += f"""
-            {_render_button('Sign In with Magic Link', id='magic-link-signin')}
+            {_render_button('Sign In with Magic Link', id='magic-link')}
             """
         case (None, _, None):
             email_factor_form += f"""
@@ -165,18 +165,18 @@ def render_login_page(
         case (None, _, _):
             email_factor_form += f"""
             {_render_button('Sign In', id='webauthn-signin')}
-            {_render_button("Sign in with Magic Link", id="magic-link-signin")}
+            {_render_button("Sign in with Magic Link", id="magic-link")}
             """
         case (_, None, _):
             email_factor_form += f"""
             {_render_button("Sign In", id="password-signin")}
-            {_render_button("Sign in with Magic Link", id="magic-link-signin")}
+            {_render_button("Sign in with Magic Link", id="magic-link")}
             """
         case (_, _, _):
             email_factor_form += f"""
             {_render_button('Sign In', id='webauthn-signin')}
             {_render_button("Sign in with password", id="password-signin")}
-            {_render_button("Sign in with Magic Link", id="magic-link-signin")}
+            {_render_button("Sign in with Magic Link", id="magic-link")}
             """
 
     email_factor_form += f"""
@@ -185,6 +185,15 @@ def render_login_page(
           <a href="signup" tabindex="3">Sign up</a>
         </div>
         """
+
+    email_factor_script = ""
+    if webauthn_provider:
+        email_factor_script += """
+        <script type="module" src="_static/webauthn.js"></script>"""
+    if magic_link_provider:
+        email_factor_script += """
+        <script type="module" src="_static/magic-link.js"></script>"""
+
 
     return _render_base_page(
         title=f'Sign in{f" to {app_name}" if app_name else ""}',
@@ -221,11 +230,7 @@ def render_login_page(
     {email_factor_form if has_email_factor else ''}
     </form>
     {forgot_link_script}
-    {
-      """
-      <script type="module" src="_static/webauthn-authenticate.js"></script>"""
-      if webauthn_provider is not None else ''
-    }
+    {email_factor_script}
     ''',
     )
 
@@ -317,7 +322,7 @@ def render_signup_page(
             email_factor_form += ""
         case (None, None, _):
             email_factor_form += f"""
-            {_render_button('Sign Up with Magic Link', id='magic-link-signup')}
+            {_render_button('Sign Up with Magic Link', id='magic-link')}
             """
         case (None, _, None):
             email_factor_form += f"""
@@ -335,18 +340,18 @@ def render_signup_page(
         case (None, _, _):
             email_factor_form += f"""
             {_render_button('Sign Up', id='webauthn-signup')}
-            {_render_button('Sign Up with Magic Link', id='magic-link-signup')}
+            {_render_button('Sign Up with Magic Link', id='magic-link')}
             """
         case (_, None, _):
             email_factor_form += f"""
             {_render_button("Sign Up", id="password-signup")}
-            {_render_button('Sign Up with Magic Link', id='magic-link-signup')}
+            {_render_button('Sign Up with Magic Link', id='magic-link')}
             """
         case (_, _, _):
             email_factor_form += f"""
             {_render_button('Sign Up', id='webauthn-signup')}
             {_render_button("Sign up with password", id="password-signup")}
-            {_render_button('Sign Up with Magic Link', id='magic-link-signup')}
+            {_render_button('Sign Up with Magic Link', id='magic-link')}
             """
 
     email_factor_form += f"""
@@ -360,6 +365,10 @@ def render_signup_page(
     if webauthn_provider:
         email_factor_script += """
         <script type="module" src="_static/webauthn.js"></script>"""
+    if magic_link_provider:
+        email_factor_script += """
+        <script type="module" src="_static/magic-link.js"></script>"""
+
     return _render_base_page(
         title=f'Sign up{f" to {app_name}" if app_name else ""}',
         logo_url=logo_url,
@@ -643,6 +652,31 @@ def render_resend_verification_done_page(
            if app_name else '<span>Email verification resent</span>'}</h1>
 
       {content}
+    </div>''',
+    )
+
+
+def render_magic_link_sent_page(
+    *,
+    app_name: Optional[str] = None,
+    logo_url: Optional[str] = None,
+    dark_logo_url: Optional[str] = None,
+    brand_color: Optional[str] = None,
+):
+    return _render_base_page(
+        title=(f'Magic link sent{f" for {app_name}" if app_name else ""}'),
+        logo_url=logo_url,
+        dark_logo_url=dark_logo_url,
+        brand_color=brand_color,
+        cleanup_search_params=['error'],
+        content=f'''
+    <div class="container">
+        <h1>{f'<span>Magic link sent for</span> {html.escape(app_name)}'
+             if app_name else '<span>Magic link sent</span>'}</h1>
+
+        <p>
+            A magic link has been sent to your email. Please check your email.
+        </p>
     </div>''',
     )
 
