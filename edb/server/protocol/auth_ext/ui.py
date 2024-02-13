@@ -194,7 +194,6 @@ def render_signin_page(
         email_factor_script += """
         <script type="module" src="_static/magic-link.js"></script>"""
 
-
     return _render_base_page(
         title=f'Sign in{f" to {app_name}" if app_name else ""}',
         logo_url=logo_url,

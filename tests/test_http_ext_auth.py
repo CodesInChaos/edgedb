@@ -3794,7 +3794,6 @@ class TestHttpExtAuth(tb.ExtAuthTestCase):
             location = headers.get("location")
             assert location is not None
             parsed_location = urllib.parse.urlparse(location)
-            parsed_query = urllib.parse.parse_qs(parsed_location.query)
             self.assertEqual(
                 urllib.parse.urlunparse(
                     (
@@ -3808,6 +3807,7 @@ class TestHttpExtAuth(tb.ExtAuthTestCase):
                 ),
                 callback_url,
             )
+
 
     async def test_client_token_identity_card(self):
         await self.con.query_single(
