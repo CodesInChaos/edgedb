@@ -313,7 +313,7 @@ class TestSignalctl(tb.TestCase):
                 except asyncio.CancelledError:
                     # In case the task cancellation is hanging, ..
                     fut.set_result(None)
-                    await self.wait_for_parent(2)
+                    await self.loop.create_future()
 
             with signalctl.SignalController(signal.SIGTERM) as sc:
                 task = self.loop.create_task(
