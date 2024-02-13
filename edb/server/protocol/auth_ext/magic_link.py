@@ -25,6 +25,7 @@ import json
 from typing import Any, cast
 
 from edb import errors as edb_errors
+from edb.ir import statypes
 from edb.common import debug
 from edb.server.protocol import execute
 
@@ -55,7 +56,7 @@ class Client(local.Client):
                 cfg = cast(config.MagicLinkProviderConfig, cfg)
                 return config.MagicLinkProviderConfig(
                     name=cfg.name,
-                    token_time_to_live=cfg.token_time_to_live,
+                    token_time_to_live=statypes.Duration('PT1H'),
                 )
 
         raise errors.MissingConfiguration(

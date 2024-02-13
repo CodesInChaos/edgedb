@@ -267,11 +267,12 @@ CREATE EXTENSION PACKAGE auth VERSION '1.0' {
             set protected := true;
         };
 
-        create required property token_time_to_live: std::duration {
-            set default := <std::duration>'10 minutes';
-            create annotation std::description :=
-                "The time after which a magic link token expires.";
-        };
+        # XXX: Turn this back on when duration values work
+        # create required property token_time_to_live: std::duration {
+        #     set default := <std::duration>'10 minutes';
+        #     create annotation std::description :=
+        #         "The time after which a magic link token expires.";
+        # };
     };
 
     create scalar type ext::auth::FlowType extending std::enum<PKCE, Implicit>;
