@@ -103,8 +103,8 @@ select identity { * };""",
         identity_id = await self.get_identity_id_by_email(email)
 
         if identity_id is None:
-            new_identity = await self.register(email)
-            identity_id = new_identity.id
+            await auth_emails.send_fake_email(self.tenant)
+            return
 
         token = util.make_token(
             signing_key=signing_key,

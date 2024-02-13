@@ -1,4 +1,13 @@
-const MAGIC_LINK_SEND_URL = new URL("../send-magic-link", window.location.href);
+import { parseResponseAsJSON } from "./utils";
+
+const MAGIC_LINK_REGISTER_URL = new URL(
+  "../magic-link/register",
+  window.location.href
+);
+const MAGIC_LINK_EMAIL_URL = new URL(
+  "../magic-link/email",
+  window.location.href
+);
 const MAGIC_LINK_SENT_URL = new URL("./magic-link-sent", window.location.href);
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -9,47 +18,58 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   emailFactorForm.addEventListener("submit", async (event) => {
-    if (event.submitter?.id !== "magic-link") {
-      return;
-    }
-    event.preventDefault();
+    switch (event.submitter?.id) {
+      case "magic-link-signup":
+      case "magic-link-signin": {
+        event.preventDefault();
 
-    const formData = new FormData(
-      /** @type {HTMLFormElement} */ emailFactorForm
-    );
-    const email = formData.get("email");
-    const provider = "builtin::local_magic_link";
-    const callbackUrl = formData.get("redirect_to");
-    const challenge = formData.get("challenge");
+        const formData = new FormData(emailFactorForm);
+        const email = formData.get("email");
+        const provider = "builtin::local_magic_link";
+        const callbackUrl = formData.get("redirect_to");
+        const challenge = formData.get("challenge");
 
-    const missingFields = [email, provider, callbackUrl, challenge].filter(
-      Boolean
-    );
-    if (missingFields.length > 0) {
-      throw new Error(
-        "Missing required parameters: " + missingFields.join(", ")
-      );
-    }
+        const missingFields = [email, provider, callbackUrl, challenge].filter(
+          Boolean
+        );
+        if (missingFields.length > 0) {
+          throw new Error(
+            "Missing required parameters: " + missingFields.join(", ")
+          );
+        }
 
-    try {
-      await sendMagicLink({
-        email,
-        provider,
-        callbackUrl,
-        challenge,
-      });
-      window.location = MAGIC_LINK_SENT_URL.href;
-    } catch (err) {
-      console.error("Failed to register magic link:", err);
-      const url = new URL(window.location.href);
-      url.searchParams.append("error", err.message);
-      window.location = url.href;
+        try {
+          if (event.submitter.id === "magic-link-signup") {
+            await registerMagicLink({
+              email,
+              provider,
+              callbackUrl,
+              challenge,
+            });
+          } else if (event.submitter.id === "magic-link-signin") {
+            await sendMagicLink({
+              email,
+              provider,
+              callbackUrl,
+              challenge,
+            });
+          }
+          window.location = MAGIC_LINK_SENT_URL.href;
+        } catch (err) {
+          console.error("Magic link failed: ", err);
+          const url = new URL(window.location.href);
+          url.searchParams.append("error", err.message);
+          window.location = url.href;
+        }
+      }
+      default:
+        return;
     }
   });
 });
 
-async function sendMagicLink({ email, provider, callbackUrl, challenge }) {
-  const response = await fetch(MAGIC_LINK_SEND_URL, {
+async function registerMagicLink({ email, provider, callbackUrl, challenge }) {
+  const response = await fetch(MAGIC_LINK_REGISTER_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -62,16 +82,37 @@ async function sendMagicLink({ email, provider, callbackUrl, challenge }) {
     }),
   });
 
-  if (!response.ok) {
-    console.error("Failed to send magic link: ", response.statusText);
-    console.error(await response.text());
-    throw new Error("Failed to send magic link");
-  }
+  return await parseResponseAsJSON(response, [
+    (response, error) => {
+      if (response.status === 409 && error.type === "UserAlreadyRegistered") {
+        throw new Error("User already registered, please sign in.");
+      }
+    },
+    (response, error) => {
+      console.error("Failed to register: ", response.statusText, error);
+      throw new Error("Failed to register email.");
+    },
+  ]);
+}
 
-  try {
-    return await response.json();
-  } catch (e) {
-    console.error("Failed to parse magic link response: ", e);
-    throw new Error("Failed to parse magic link response");
-  }
+async function sendMagicLink({ email, provider, callbackUrl, challenge }) {
+  const response = await fetch(MAGIC_LINK_EMAIL_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      provider,
+      callbackUrl,
+      challenge,
+    }),
+  });
+
+  return await parseResponseAsJSON(response, [
+    (response, error) => {
+      console.error("Failed to send magic link: ", response.statusText, error);
+      throw new Error("Failed to send magic link");
+    },
+  ]);
 }

@@ -107,10 +107,14 @@ class Router:
                     return await self.handle_send_reset_email(*handler_args)
                 case ('reset-password',):
                     return await self.handle_reset_password(*handler_args)
-                case ('send-magic-link',):
-                    return await self.handle_send_magic_link(*handler_args)
-                case ('magic-link',):
-                    return await self.handle_magic_link(*handler_args)
+                case ('magic-link', 'register'):
+                    return await self.handle_magic_link_register(*handler_args)
+                case ('magic-link', 'email'):
+                    return await self.handle_magic_link_email(*handler_args)
+                case ('magic-link', 'authenticate'):
+                    return await self.handle_magic_link_authenticate(
+                        *handler_args
+                    )
 
                 # WebAuthn routes
                 case ('webauthn', 'register'):
@@ -831,7 +835,7 @@ class Router:
             else:
                 raise ex
 
-    async def handle_send_magic_link(self, request: Any, response: Any):
+    async def handle_magic_link_register(self, request: Any, response: Any):
         data = self._get_data_from_request(request)
 
         _check_keyset(
@@ -851,7 +855,6 @@ class Router:
             raise errors.InvalidData(
                 "Redirect URL does not match any allowed URLs.",
             )
-
         magic_link_client = magic_link.Client(
             db=self.db,
             issuer=self.base_path,
@@ -859,10 +862,13 @@ class Router:
             test_mode=self.test_mode,
         )
         try:
+            await magic_link_client.register(
+                email=email,
+            )
             await magic_link_client.send_magic_link(
                 email=email,
                 callback_url=callback_url,
-                link_url=f"{self.base_path}/magic-link",
+                link_url=f"{self.base_path}/magic-link/authenticate",
                 challenge=challenge,
             )
 
@@ -899,7 +905,75 @@ class Router:
                     redirect_on_failure, redirect_params
                 )
 
-    async def handle_magic_link(self, request: Any, response: Any):
+    async def handle_magic_link_email(self, request: Any, response: Any):
+        data = self._get_data_from_request(request)
+
+        _check_keyset(
+            data,
+            {"provider", "email", "challenge", "callback_url"},
+        )
+
+        email = data["email"]
+        challenge = data["challenge"]
+        callback_url = data["callback_url"]
+        if not self._is_url_allowed(callback_url):
+            raise errors.InvalidData(
+                "Callback URL does not match any allowed URLs.",
+            )
+        maybe_redirect_to = data.get("redirect_to")
+        if maybe_redirect_to and not self._is_url_allowed(maybe_redirect_to):
+            raise errors.InvalidData(
+                "Redirect URL does not match any allowed URLs.",
+            )
+
+        magic_link_client = magic_link.Client(
+            db=self.db,
+            issuer=self.base_path,
+            tenant=self.tenant,
+            test_mode=self.test_mode,
+        )
+        try:
+            await magic_link_client.send_magic_link(
+                email=email,
+                callback_url=callback_url,
+                link_url=f"{self.base_path}/magic-link/authenticate",
+                challenge=challenge,
+            )
+
+            return_data = {
+                "email_sent": email,
+            }
+
+            if maybe_redirect_to:
+                response.status = http.HTTPStatus.FOUND
+                response.custom_headers["Location"] = util.join_url_params(
+                    maybe_redirect_to, return_data
+                )
+            else:
+                response.status = http.HTTPStatus.OK
+                response.content_type = b"application/json"
+                response.body = json.dumps(return_data).encode()
+        except Exception as ex:
+            redirect_on_failure = data.get(
+                "redirect_on_failure", maybe_redirect_to
+            )
+            if redirect_on_failure is None:
+                raise ex
+            else:
+                if not self._is_url_allowed(redirect_on_failure):
+                    raise errors.InvalidData(
+                        "Redirect URL does not match any allowed URLs.",
+                    )
+                response.status = http.HTTPStatus.FOUND
+                redirect_params = {
+                    "error": str(ex),
+                    "email": data.get('email', ''),
+                }
+                response.custom_headers["Location"] = util.join_url_params(
+                    redirect_on_failure, redirect_params
+                )
+
+    async def handle_magic_link_authenticate(self, request: Any, response: Any):
         local_client = magic_link.Client(
             db=self.db,
             tenant=self.tenant,
