@@ -992,7 +992,9 @@ class Router:
         code = await pkce.link_identity_challenge(
             self.db, identity_id, challenge
         )
-        await local_client.verify_email(identity_id, datetime.datetime.now())
+        await local_client.verify_email(
+            identity_id, datetime.datetime.now(datetime.timezone.utc)
+        )
 
         response.status = http.HTTPStatus.FOUND
         response.custom_headers["Location"] = util.join_url_params(

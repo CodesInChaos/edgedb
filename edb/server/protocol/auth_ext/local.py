@@ -110,7 +110,7 @@ with
     email := <str>$email,
     identity := (
         select ext::auth::LocalIdentity
-        filter .<identity[is EmailFactor].email = email
+        filter .<identity[is ext::auth::EmailFactor].email = email
     ),
 select identity.id;""",
             variables={"email": email},
